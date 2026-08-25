@@ -664,6 +664,13 @@ main,
   .pipe-step,
   .pipe-step:nth-child(2n) {
     border-right: none;
+    min-width: 0;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+  }
+
+  .pipe-step .eq {
+    white-space: normal;
+    overflow-wrap: anywhere;
   }
 
   .hero-stats {
