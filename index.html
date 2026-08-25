@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>erebus</title>
+    <meta
+      name="description"
+      content="Undergraduate thesis showcase: image encryption based on a chaotic logistic map and a linear feedback shift register."
+    />
+    <link rel="preconnect" href="https://api.fontshare.com" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://api.fontshare.com/v2/css?f[]=open-sauce-one@400,500,600,700,800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="noise" aria-hidden="true"></div>
+    <canvas id="bg-chaos" class="bg-canvas" aria-hidden="true"></canvas>
+
+    <header class="nav">
+      <a class="nav-mark" href="#top">h°</a>
+      <nav class="nav-links">
+        <a href="#overview">Overview</a>
+        <a href="#pipeline">Pipeline</a>
+        <a href="#chaos">Chaos</a>
+        <a href="#lfsr">LFSR</a>
+        <a href="#lab">Lab</a>
+      </nav>
+      <span class="nav-meta">Thesis · 2026</span>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <p class="eyebrow fade-up">
+          Undergraduate thesis · Chaos theory · Cryptography
+        </p>
+        <h1 class="hero-title fade-up">
+          Image Encryption
+          <span>Based on Chaotic</span>
+          <span>Logistic Map and LFSR</span>
+        </h1>
+        <p class="hero-lede fade-up">
+          A grayscale cipher that binds the key to the image itself: pixels are
+          shuffled by a logistic orbit, then drowned in a double diffusion driven
+          by a linear feedback shift register.
+        </p>
+        <div class="hero-actions fade-up">
+          <a class="btn btn-solid" href="#lab">Run the cipher</a>
+          <a class="btn btn-ghost" href="#pipeline">See how it works</a>
+        </div>
+        <dl class="hero-stats fade-up">
+          <div>
+            <dt>Confusion</dt>
+            <dd>Logistic map</dd>
+          </div>
+          <div>
+            <dt>Diffusion</dt>
+            <dd>LFSR + dual pass</dd>
+          </div>
+          <div>
+            <dt>Key</dt>
+            <dd>Plaintext-dependent</dd>
+          </div>
+        </dl>
+        <a class="scroll-hint" href="#overview" aria-label="Scroll to overview">
+          <span></span>
+        </a>
+      </section>
+
+      <section id="overview" class="section">
+        <div class="section-head">
+          <p class="kicker">01 — Overview</p>
+          <h2>Two generators. One irreversible-looking field of noise.</h2>
+        </div>
+        <div class="overview-grid">
+          <article class="panel">
+            <h3>The problem</h3>
+            <p>
+              Digital images leak structure. Neighboring pixels are highly
+              correlated, so a weak permutation still looks like a photograph.
+              A useful cipher has to destroy both <em>position</em> and
+              <em>value</em> — then recover both exactly when the key is known.
+            </p>
+          </article>
+          <article class="panel">
+            <h3>The approach</h3>
+            <p>
+              The logistic map
+              <span class="eq">x<sub>n+1</sub> = r x<sub>n</sub>(1 − x<sub>n</sub>)</span>
+              at <span class="eq">r = 3.99</span> supplies a chaotic sequence
+              for shuffling. An 8-bit LFSR with taps
+              <span class="mono">[7, 5, 4, 3]</span> supplies a bit stream for
+              mixing. Forward and backward diffusion spread a single pixel
+              change across the whole canvas.
+            </p>
+          </article>
+          <article class="panel">
+            <h3>The twist</h3>
+            <p>
+              The logistic seed is not a static password. It is offset by the
+              image’s mean intensity, so even a one-pixel edit yields a
+              different orbit — and a different permutation. Decryption stores
+              that sum in <span class="mono">catatan_kunci.txt</span>.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section id="pipeline" class="section">
+        <div class="section-head">
+          <p class="kicker">02 — Pipeline</p>
+          <h2>From photograph to noise, then back.</h2>
+          <p class="lede">
+            Encryption is a one-way walk through six stages. Decryption is the
+            same walk in reverse: undo diffusion, unshuffle, reshape.
+          </p>
+        </div>
+
+        <ol class="pipeline">
+          <li class="pipe-step" data-step="0">
+            <span class="pipe-num">01</span>
+            <div>
+              <h3>Flatten</h3>
+              <p>Read grayscale. Rasterize the matrix into a 1-D pixel vector of length <span class="eq">N = H × W</span>.</p>
+            </div>
+          </li>
+          <li class="pipe-step" data-step="1">
+            <span class="pipe-num">02</span>
+            <div>
+              <h3>Bind the seed</h3>
+              <p>
+                <span class="eq">x<sub>0</sub> = (0.123456789 + ΣI / 255N) mod 1</span>.
+                A zero seed is replaced by 0.5.
+              </p>
+            </div>
+          </li>
+          <li class="pipe-step" data-step="2">
+            <span class="pipe-num">03</span>
+            <div>
+              <h3>Chaos orbit</h3>
+              <p>Iterate the logistic map for N steps. Sort the orbit to obtain a permutation.</p>
+            </div>
+          </li>
+          <li class="pipe-step" data-step="3">
+            <span class="pipe-num">04</span>
+            <div>
+              <h3>Confusion</h3>
+              <p>Reorder pixels by that permutation. Spatial neighbors become strangers.</p>
+            </div>
+          </li>
+          <li class="pipe-step" data-step="4">
+            <span class="pipe-num">05</span>
+            <div>
+              <h3>LFSR stream</h3>
+              <p>Clock an 8-bit register from seed <span class="mono">0b10101010</span>. Scale bits to \(0\) or \(255\).</p>
+            </div>
+          </li>
+          <li class="pipe-step" data-step="5">
+            <span class="pipe-num">06</span>
+            <div>
+              <h3>Double diffusion</h3>
+              <p>
+                Forward:
+                <span class="eq">c<sub>i</sub> = (s<sub>i</sub> + k<sub>i</sub> + ⌊255 x<sub>i</sub>⌋ + c<sub>i−1</sub>) mod 256</span>.
+                Then a backward carry pass.
+              </p>
+            </div>
+          </li>
+        </ol>
+      </section>
+
+      <section id="chaos" class="section split">
+        <div>
+          <p class="kicker">03 — Logistic map</p>
+          <h2>Sensitive dependence, on purpose.</h2>
+          <p class="lede">
+            In the chaotic regime the map is deterministic but unpredictable
+            without the exact seed. That orbit becomes the shuffle key: we
+            argsort the sequence and move every pixel to a new index.
+          </p>
+          <ul class="spec-list">
+            <li><span>Parameter \(r\)</span><strong>3.99</strong></li>
+            <li><span>Domain</span><strong>x ∈ (0, 1)</strong></li>
+            <li><span>Use</span><strong>Permutation / confusion</strong></li>
+          </ul>
+        </div>
+        <div class="viz-card">
+          <div class="viz-bar">
+            <span>Orbit · x<sub>n+1</sub> = r x<sub>n</sub>(1 − x<sub>n</sub>)</span>
+            <span id="chaos-label">x₀ = 0.314</span>
+          </div>
+          <canvas id="logistic-canvas" width="720" height="420"></canvas>
+        </div>
+      </section>
+
+      <section id="lfsr" class="section split reverse">
+        <div>
+          <p class="kicker">04 — Linear feedback</p>
+          <h2>Eight bits, clocked forever.</h2>
+          <p class="lede">
+            Each tick XORs taps 7, 5, 4, and 3, shifts the register right, and
+            feeds the result into the MSB. The LSB after the shift is the
+            keystream bit — then multiplied by 255 so it can mix with pixel
+            intensities.
+          </p>
+          <ul class="spec-list">
+            <li><span>Width</span><strong>8-bit</strong></li>
+            <li><span>Seed</span><strong>0b10101010</strong></li>
+            <li><span>Taps</span><strong>7 ⊕ 5 ⊕ 4 ⊕ 3</strong></li>
+          </ul>
+        </div>
+        <div class="viz-card">
+          <div class="viz-bar">
+            <span>Register · clock</span>
+            <span id="lfsr-bit">out = 0</span>
+          </div>
+          <div class="lfsr-stage">
+            <div class="lfsr-bits" id="lfsr-bits" aria-hidden="true"></div>
+            <p class="lfsr-formula">
+              feedback = b<sub>7</sub> ⊕ b<sub>5</sub> ⊕ b<sub>4</sub> ⊕ b<sub>3</sub>
+            </p>
+            <div class="lfsr-stream" id="lfsr-stream"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="section-head">
+          <p class="kicker">05 — Confusion &amp; diffusion</p>
+          <h2>Shuffle the lattice. Then stain every neighbor.</h2>
+        </div>
+        <div class="two-viz">
+          <div class="viz-card">
+            <div class="viz-bar">
+              <span>Confusion</span>
+              <span>argsort(chaos)</span>
+            </div>
+            <canvas id="shuffle-canvas" width="480" height="480"></canvas>
+          </div>
+          <div class="viz-card">
+            <div class="viz-bar">
+              <span>Double diffusion</span>
+              <span>forward → backward</span>
+            </div>
+            <canvas id="diffuse-canvas" width="480" height="480"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <section id="lab" class="section lab">
+        <div class="section-head">
+          <p class="kicker">06 — Live laboratory</p>
+          <h2>Encrypt 256×256 grayscale in the browser.</h2>
+          <p class="lede">
+            Same mathematics as the Python thesis code, on a full 256×256 field
+            (65,536 pixels). Drop a photo — it is center-cropped and converted
+            to grayscale — or generate a subject.
+          </p>
+        </div>
+
+        <div class="lab-layout">
+          <div class="lab-controls panel">
+            <label class="file-drop" for="image-input">
+              <input id="image-input" type="file" accept="image/*" />
+              <strong>Drop an image</strong>
+              <span>or click to browse · 256×256 grayscale</span>
+            </label>
+            <button type="button" class="btn btn-solid" id="btn-sample">
+              Generate subject
+            </button>
+            <button type="button" class="btn btn-ghost" id="btn-run">
+              Encrypt → decrypt
+            </button>
+            <p class="lab-status" id="lab-status">Waiting for a source image.</p>
+            <dl class="lab-metrics" id="lab-metrics">
+              <div>
+                <dt>Mean intensity</dt>
+                <dd id="m-mean">—</dd>
+              </div>
+              <div>
+                <dt>Modified x₀</dt>
+                <dd id="m-x0">—</dd>
+              </div>
+              <div>
+                <dt>Pixel sum</dt>
+                <dd id="m-sum">—</dd>
+              </div>
+            </dl>
+          </div>
+          <div class="lab-frames">
+            <figure>
+              <canvas id="frame-plain" width="256" height="256"></canvas>
+              <figcaption>Plaintext</figcaption>
+            </figure>
+            <figure>
+              <canvas id="frame-conf" width="256" height="256"></canvas>
+              <figcaption>After confusion</figcaption>
+            </figure>
+            <figure>
+              <canvas id="frame-cipher" width="256" height="256"></canvas>
+              <figcaption>Ciphertext</figcaption>
+            </figure>
+            <figure>
+              <canvas id="frame-plain-out" width="256" height="256"></canvas>
+              <figcaption>Decrypted</figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section note">
+        <p class="kicker">Security notice</p>
+        <h2>Academic implementation.</h2>
+        <p>
+          This cipher was built for research and demonstration. It is not a
+          production cryptosystem. The LFSR is short, the logistic map is
+          floating-point, and the dynamic key must be stored to invert the
+          permutation. Treat it as a study of chaos-based confusion and
+          diffusion — not as a replacement for AES.
+        </p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Image Encryption · Chaotic Logistic Map × LFSR</p>
+      <p>MIT License · Undergraduate thesis project</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
