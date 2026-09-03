@@ -586,6 +586,21 @@ main,
   color: var(--muted);
 }
 
+.source-link {
+  display: inline-flex;
+  gap: 0.45rem;
+  margin-top: 0.4rem;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--muted);
+  text-underline-offset: 0.25em;
+}
+
+.source-link:hover,
+.footer a:hover {
+  text-decoration-color: var(--ink);
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
@@ -597,6 +612,13 @@ main,
   font-size: 0.8rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.footer a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--muted);
+  text-underline-offset: 0.25em;
 }
 
 .fade-up {

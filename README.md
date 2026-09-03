@@ -2,6 +2,8 @@
 
 An interactive undergraduate thesis showcase for a grayscale image cipher that combines a chaotic logistic map with an 8-bit linear feedback shift register (LFSR).
 
+The original thesis algorithm is available at [wahyuagast/image-encryption-chaotic-lfsr](https://github.com/wahyuagast/image-encryption-chaotic-lfsr). This site is a browser-based interactive showcase of that work.
+
 The project runs entirely in the browser using vanilla HTML, CSS, and JavaScript. It includes explanatory visualizations for the chaotic orbit, LFSR state, pixel shuffling, diffusion, and a live 256 x 256 encryption/decryption laboratory.
 
 ## Features
